@@ -1,81 +1,36 @@
-aws-iam-manager
-Manage multiple AWS Account IAM Users, Groups and Policies using Github Repository & Cross-Account access with simple AWS Lambda function based on-top Serverless framework.
+WHAT is AWS IAM?
 
-Overview
-Overview
+AWS Identity and Access Management (IAM) is a web service that helps you securely control access to AWS resources. You use IAM to control who is authenticated (signed in) and authorized (has permissions) to use resources.
 
-Basing on repository contents, AWS-IAM-Manager (AIM) will create users, assign to specific groups with attached policies.
 
-Prerequisities
-Node.js LTS or newer
-Serverless Framework
-Deploying
-Run npm run prepare-secret and fill out values in secrets.yml
-Execute npm run deploy and wait for results. This will deploy a function receiving events from Amazon Simple Notification Service. Those events will be sent from Github when your repository contents change (putting to SNS topic/queue). By default, function will be deployed to US East (N. Virginia).
-Setting up webhook
-In order to integrate AWS Lambda with Github repo, you have to create a Webhook which will send data through AWS SNS. Here's how to do that:
+IAM gives you the following features:
 
-Go to https://console.aws.amazon.com/iam/home?region=<YOUR_REGION_NAME>#/users/<YOUR_USER>?section=security_credentials and click Create access key. Wait couple seconds to generate and then download generated CSV file or copy Access Key & Secret access key. You'll need that to setup Github hook.
-Go to https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/aws-iam-manager-dev-IAMManagerSNSHandler?tab=triggers and copy the value under SNS: IAMManagerNotifyTopic like in the image below: Here is where we find SNS Topic Amazon Resource Name SNS Topic ARN It will look like this: arn:aws:sns:us-east-1:<YOUR_AWS_ACC_NUMBER>:IAMManagerNotifyTopic. Make sure you are in us-east-1 region, as shown in the picture above.
-Go to https://github.com/YOUR_NAME/REPO/settings/hooks/new?service=amazonsns and fill form with data you retrieved in steps 2 & 3. Lastly, click Add Service.
-Now aws-iam-manager will continuously monitor your GitHub repo and reflect changes on AWS accounts.
-Setup
-AIM is capable of managing accounts with Cross-Account access. In order to do that we need to do three things:
+Shared access to your AWS account
+You can grant other people permission to administer and use resources in your AWS account without having to share your password or access key.
 
-Establish a trust relationship between Slave account and Master Account (account where our Lambda is deployed). Tutorial how to do that here
-Create Policy document allowing our Lambda to assume role of other accounts IAM role. Tutorial how to do that here
-Update accounts configuration in DynamoDB table called aim_roles. Tutorial how to do that here
-How it works
-Once a change is made to a master branch code, a Webhook send an event through SNS to AWS Lambda. Lambda code downloads whole repository. Going folder by folder, it impersonates other account roles using Cross-Account access credentials which are stored inside DynamoDB table aim_users.
+Granular permissions
+You can grant different permissions to different people for different resources. For example, you might allow some users complete access to Amazon Elastic Compute Cloud (Amazon EC2), Amazon Simple Storage Service (Amazon S3), Amazon DynamoDB, Amazon Redshift, and other AWS services. For other users, you can allow read-only access to just some S3 buckets, or permission to administer just some EC2 instances, or to access your billing information but nothing else.
 
-Once impersonated, code detects any differences between code from repository and IAM state and applies any needed changes. If any new user gets created, it sends an email using AWS SES to system administrator and user that has been just created.
+Secure access to AWS resources for applications that run on Amazon EC2
+You can use IAM features to securely provide credentials for applications that run on EC2 instances. These credentials provide permissions for your application to access other AWS resources. Examples include S3 buckets and DynamoDB tables.
 
-After processing account, Lambda switches its role back and starts processing another folder-account until it traverses whole repository.
+Multi-factor authentication (MFA)
+You can add two-factor authentication to your account and to individual users for extra security. With MFA you or your users must provide not only a password or access key to work with your account, but also a code from a specially configured device.
 
-Repository Structure
-Files structure
-/repo_root
-├── account_one
-|     ├── users.yml
-|     ├── groups.yml
-|     └── policies.yml
-└── account_two
-      ├── users.yml
-      ├── groups.yml
-      └── policies.yml
-Sample files
-users.yml
+Identity federation
+You can allow users who already have passwords elsewhere—for example, in your corporate network or with an internet identity provider—to get temporary access to your AWS account.
 
-users:
-  - sample.user
-  - another.user
-policies.yml
+Identity information for assurance
+If you use AWS CloudTrail, you receive log records that include information about those who made requests for resources in your account. That information is based on IAM identities.
 
-policies:
-  - name: s3-list-bucket-access-policy
-    document:
-      Version: '2012-10-17'
-      Statement:
-        Effect: Allow
-        Action: s3:ListBucket
-        Resource: arn:aws:s3:::*
-groups.yml
+PCI DSS Compliance
+IAM supports the processing, storage, and transmission of credit card data by a merchant or service provider, and has been validated as being compliant with Payment Card Industry (PCI) Data Security Standard (DSS). For more information about PCI DSS, including how to request a copy of the AWS PCI Compliance Package, see PCI DSS Level 1.
 
-groups:
-  - name: developers
-    policy: s3-list-bucket-access-policy
-    users:
-      - sample.user
-  - name: developers-two
-    policy: s3-list-bucket-access-policy
-    users:
-      - another.user
-Following setup will create two users, two groups and one policy. User sample.user will be joined to developers group while another.user will be joined to developers-two group. Both groups will receive rights to perform list-buckets action on all S3 Buckets because of attached s3-list-bucket-access-policy policy.
+Integrated with many AWS services
+For a list of AWS services that work with IAM, see AWS Services That Work with IAM.
 
-Private Repositories
-In case your repository is private you need to include access_token in every request to Github API. To do that, generate new Personal Access Token and copy that to secrets.yml GITHUB_ACCESS_TOKEN.
+Eventually Consistent
+IAM, like many other AWS services, is eventually consistent. IAM achieves high availability by replicating data across multiple servers within Amazon's data centers around the world. If a request to change some data is successful, the change is committed and safely stored. However, the change must be replicated across IAM, which can take some time. Such changes include creating or updating users, groups, roles, or policies. We recommend that you do not include such IAM changes in the critical, high-availability code paths of your application. Instead, make IAM changes in a separate initialization or setup routine that you run less frequently. Also, be sure to verify that the changes have been propagated before production workflows depend on them. For more information, see Changes That I Make Are Not Always Immediately Visible.
 
-Local Development
-For ease and speed of development it's highly recommended to test code locally using npm run invoke script which will run function locally with data from event.json.
-
-For nicer output you should also consider installing bunyan globally. If not, feel free to remove | bunyan part from package.json.
+Free to use
+AWS Identity and Access Management (IAM) and AWS Security Token Service (AWS STS) are features of your AWS account offered at no additional charge. You are charged only when you access other AWS services using your IAM users or AWS STS temporary security credentials.
